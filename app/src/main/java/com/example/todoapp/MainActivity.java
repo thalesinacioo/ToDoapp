@@ -15,6 +15,11 @@ import android.widget.AdapterView;
 import androidx.appcompat.app.AlertDialog;
 import android.content.DialogInterface;
 import androidx.appcompat.app.AppCompatActivity;
+import android.view.ViewGroup;
+import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
+import android.widget.CheckBox;
+
 
 import java.util.ArrayList;
 
@@ -59,7 +64,74 @@ public class MainActivity extends AppCompatActivity {
         itemList = new ArrayList<>();
 
         // Criando o adaptador para a lista
-        adapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1, itemList);
+
+        adapter = new ArrayAdapter<String>(this, R.layout.list_item, R.id.text_item, itemList) {
+            @NonNull
+            @Override
+            public View getView(int position, @Nullable View convertView, @NonNull ViewGroup parent) {
+                View view = super.getView(position, convertView, parent);
+
+                CheckBox checkBox = view.findViewById(R.id.checkbox_item);
+                checkBox.setChecked(false);
+
+                view.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        // Obtém o item selecionado
+                        String selectedItem = itemList.get(position);
+
+                        // Exibe o diálogo de edição
+                        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                        builder.setTitle("Editar Item");
+
+                        final EditText editText = new EditText(MainActivity.this);
+                        editText.setText(selectedItem);
+                        builder.setView(editText);
+
+                        builder.setPositiveButton("Salvar", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                // Obtém o novo conteúdo do item editado
+                                String editedItem = editText.getText().toString();
+
+                                // Atualiza o conteúdo do item na lista
+                                itemList.set(position, editedItem);
+
+                                // Notifica o adaptador sobre a mudança
+                                adapter.notifyDataSetChanged();
+                            }
+                        });
+
+                        builder.setNegativeButton("Cancelar", null);
+
+                        // Botão de Excluir
+                        builder.setNeutralButton("Excluir", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                // Remove o item da lista
+                                itemList.remove(position);
+
+                                // Exclui o item do banco de dados
+                                int rowsAffected = database.delete(DatabaseHelper.TABLE_NAME, DatabaseHelper.COLUMN_CONTENT + " = ?", new String[]{selectedItem});
+                                if (rowsAffected > 0) {
+
+                                    // Notifica o adaptador sobre a mudança
+                                    adapter.notifyDataSetChanged();
+                                }
+                            }
+                        });
+
+                        AlertDialog dialog = builder.create();
+                        dialog.show();
+                    }
+                });
+
+                return view;
+            }
+        };
+
+
+
 
         // Associando o adaptador à ListView
         listView.setAdapter(adapter);
@@ -95,10 +167,15 @@ public class MainActivity extends AppCompatActivity {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                // Verifica se o clique foi no CheckBox
+                if (view.findViewById(R.id.checkbox_item).isPressed()) {
+                    // Se o clique foi no CheckBox, não faz nada
+                    return;
+                }
                 // Obtém o item selecionado
                 String selectedItem = itemList.get(position);
 
-                // Exibe um diálogo de edição
+                // Exibe o diálogo de edição
                 AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
                 builder.setTitle("Editar Item");
 
@@ -113,16 +190,10 @@ public class MainActivity extends AppCompatActivity {
                         String editedItem = editText.getText().toString();
 
                         // Atualiza o conteúdo do item na lista
-                        ContentValues values = new ContentValues();
-                        values.put(DatabaseHelper.COLUMN_CONTENT, editedItem);
+                        itemList.set(position, editedItem);
 
-                        int rowsAffected = database.update(DatabaseHelper.TABLE_NAME, values, DatabaseHelper.COLUMN_CONTENT + " = ?", new String[]{selectedItem});
-                        if (rowsAffected > 0) {
-                            itemList.set(position, editedItem);
-
-                            // Notifica o adaptador sobre a mudança
-                            adapter.notifyDataSetChanged();
-                        }
+                        // Notifica o adaptador sobre a mudança
+                        adapter.notifyDataSetChanged();
                     }
                 });
 
@@ -146,6 +217,7 @@ public class MainActivity extends AppCompatActivity {
 
                 AlertDialog dialog = builder.create();
                 dialog.show();
+
             }
         });
 
@@ -184,7 +256,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            // Implemente essa função caso precise atualizar o banco de dados no futuro
+            // Implementamos essa função caso precise atualizar o banco de dados no futuro
         }
     }
 }
