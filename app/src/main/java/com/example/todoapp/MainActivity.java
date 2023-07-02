@@ -74,7 +74,8 @@ public class MainActivity extends AppCompatActivity {
                 CheckBox checkBox = view.findViewById(R.id.checkbox_item);
                 checkBox.setChecked(false);
 
-                view.setOnClickListener(new View.OnClickListener() {
+// Ouvinte de clique para o CheckBox
+                checkBox.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
                         // Obtém o item selecionado
@@ -114,7 +115,6 @@ public class MainActivity extends AppCompatActivity {
                                 // Exclui o item do banco de dados
                                 int rowsAffected = database.delete(DatabaseHelper.TABLE_NAME, DatabaseHelper.COLUMN_CONTENT + " = ?", new String[]{selectedItem});
                                 if (rowsAffected > 0) {
-
                                     // Notifica o adaptador sobre a mudança
                                     adapter.notifyDataSetChanged();
                                 }
