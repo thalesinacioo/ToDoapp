@@ -2,6 +2,7 @@ package com.example.todoapp;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -60,11 +61,20 @@ public class MainActivity extends AppCompatActivity {
         addButton = findViewById(R.id.button);
         listView = findViewById(R.id.listView);
 
+        Button button2 = findViewById(R.id.button2);
+        button2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Abrir a nova tela (ExcluidosActivity)
+                Intent intent = new Intent(MainActivity.this, ExcluidosActivity.class);
+                startActivity(intent);
+            }
+        });
+
         // Criando a lista de itens
         itemList = new ArrayList<>();
 
         // Criando o adaptador para a lista
-
         adapter = new ArrayAdapter<String>(this, R.layout.list_item, R.id.text_item, itemList) {
             @NonNull
             @Override
@@ -74,7 +84,7 @@ public class MainActivity extends AppCompatActivity {
                 CheckBox checkBox = view.findViewById(R.id.checkbox_item);
                 checkBox.setChecked(false);
 
-// Ouvinte de clique para o CheckBox
+                // Ouvindo o clique para o CheckBox
                 checkBox.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -112,9 +122,15 @@ public class MainActivity extends AppCompatActivity {
                                 // Remove o item da lista
                                 itemList.remove(position);
 
-                                // Exclui o item do banco de dados
-                                int rowsAffected = database.delete(DatabaseHelper.TABLE_NAME, DatabaseHelper.COLUMN_CONTENT + " = ?", new String[]{selectedItem});
+                                // Atualiza o item no banco de dados marcando como excluído
+                                ContentValues updateValues = new ContentValues();
+                                updateValues.put(DatabaseHelper.COLUMN_EXCLUIDO, 1); // Marca como excluído
+
+                                int rowsAffected = database.update(DatabaseHelper.TABLE_NAME, updateValues,
+                                        DatabaseHelper.COLUMN_CONTENT + " = ?", new String[]{selectedItem});
+
                                 if (rowsAffected > 0) {
+
                                     // Notifica o adaptador sobre a mudança
                                     adapter.notifyDataSetChanged();
                                 }
@@ -130,13 +146,10 @@ public class MainActivity extends AppCompatActivity {
             }
         };
 
-
-
-
         // Associando o adaptador à ListView
         listView.setAdapter(adapter);
 
-        // Configurando o clique do botão
+        // Configurando o clique do botão de adicionar
         addButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -206,8 +219,13 @@ public class MainActivity extends AppCompatActivity {
                         // Remove o item da lista
                         itemList.remove(position);
 
-                        // Exclui o item do banco de dados
-                        int rowsAffected = database.delete(DatabaseHelper.TABLE_NAME, DatabaseHelper.COLUMN_CONTENT + " = ?", new String[]{selectedItem});
+                        // Atualiza o item no banco de dados marcando como excluído
+                        ContentValues updateValues = new ContentValues();
+                        updateValues.put(DatabaseHelper.COLUMN_EXCLUIDO, 1); // Marca como excluído
+
+                        int rowsAffected = database.update(DatabaseHelper.TABLE_NAME, updateValues,
+                                DatabaseHelper.COLUMN_CONTENT + " = ?", new String[]{selectedItem});
+
                         if (rowsAffected > 0) {
                             // Notifica o adaptador sobre a mudança
                             adapter.notifyDataSetChanged();
@@ -226,37 +244,12 @@ public class MainActivity extends AppCompatActivity {
         database = databaseHelper.getWritableDatabase();
 
         // Recuperando os itens salvos do banco de dados
-        Cursor cursor = database.query(DatabaseHelper.TABLE_NAME, null, null, null, null, null, null);
+        Cursor cursor = database.query(DatabaseHelper.TABLE_NAME, null, DatabaseHelper.COLUMN_EXCLUIDO + "=0", null, null, null, null);
         while (cursor.moveToNext()) {
             String item = cursor.getString(cursor.getColumnIndex(DatabaseHelper.COLUMN_CONTENT));
             itemList.add(item);
         }
         cursor.close();
         adapter.notifyDataSetChanged();
-    }
-
-    private class DatabaseHelper extends SQLiteOpenHelper {
-        private static final String DATABASE_NAME = "todo.db";
-        private static final int DATABASE_VERSION = 1;
-        private static final String TABLE_NAME = "todo_items";
-        private static final String COLUMN_ID = "_id";
-        private static final String COLUMN_CONTENT = "content";
-
-        public DatabaseHelper(Context context) {
-            super(context, DATABASE_NAME, null, DATABASE_VERSION);
-        }
-
-        @Override
-        public void onCreate(SQLiteDatabase db) {
-            String createTableQuery = "CREATE TABLE " + TABLE_NAME + "(" +
-                    COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                    COLUMN_CONTENT + " TEXT)";
-            db.execSQL(createTableQuery);
-        }
-
-        @Override
-        public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            // Implementamos essa função caso precise atualizar o banco de dados no futuro
-        }
     }
 }

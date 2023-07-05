@@ -25,6 +25,10 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name="ExcluidosActivity"
+            android:windowSoftInputMode="adjustResize">
+        </activity>
 
 
         <meta-data
