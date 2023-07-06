@@ -1,14 +1,18 @@
 package com.example.todoapp;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
@@ -40,7 +44,7 @@ public class ExcluidosActivity extends AppCompatActivity {
         itemList = new ArrayList<>();
 
         // Criar o adaptador para a lista
-        adapter = new ArrayAdapter<String>(this, R.layout.list_item, R.id.text_item, itemList);
+        adapter = new ArrayAdapter<>(this, R.layout.list_item, R.id.text_item, itemList);
 
         // Associar o adaptador à ListView
         listView.setAdapter(adapter);
@@ -56,5 +60,42 @@ public class ExcluidosActivity extends AppCompatActivity {
         }
         cursor.close();
         adapter.notifyDataSetChanged();
+
+        // Configurar o clique nos itens da lista
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                String selectedItem = itemList.get(position);
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(ExcluidosActivity.this);
+                builder.setTitle("Editar Item");
+
+                final EditText editText = new EditText(ExcluidosActivity.this);
+                editText.setText(selectedItem);
+                builder.setView(editText);
+
+                builder.setPositiveButton("Salvar", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String editedItem = editText.getText().toString();
+                        itemList.set(position, editedItem);
+                        adapter.notifyDataSetChanged();
+                    }
+                });
+
+                builder.setNegativeButton("Cancelar", null);
+
+                builder.setNeutralButton("Excluir", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        itemList.remove(position);
+                        adapter.notifyDataSetChanged();
+                    }
+                });
+
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+        });
     }
 }
